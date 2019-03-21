@@ -1,0 +1,111 @@
+﻿@using RoastMeApplication.Models.Entities;
+@using RoastMeApplication.Models.DAL;
+@{
+    ViewBag.Title = "Flagged Content";
+
+    List<Picture> flaggedPics = ViewBag.FlaggedPics;
+    List<Comment> flaggedComments = ViewBag.FlaggedComments;
+    int i = 0;
+}
+
+
+<h3 style="font-family: 'Josefin Sans', sans-serif; font-weight: bold;">Flagged Pictures</h3>
+<hr />
+
+@if (flaggedPics != null && flaggedPics.Count != 0)
+{
+    <table class="table table-bordered">
+        <tr>
+            <th>Caption</th>
+            <th>Image</th>
+            <th>Time</th>
+            <th>Go to Picture</th>
+            <th>UNFLAG</th>
+            <th>REMOVE</th>
+        </tr>
+
+        @foreach (Picture p in flaggedPics)
+        {
+            <tr>
+                <th>@p.Caption</th>
+                <th><img class="img-circle indexImg" src="~/Content/Images/@p.ImagePath" alt="Caption" height="225" width="225" /></th>
+                <th>@p.Time</th>
+                <th>@Html.ActionLink("go to picture", "PictureDetail", "Picture", routeValues: new {id = @p.Id}, htmlAttributes: null) </th>
+                <th>
+                    @using (Html.BeginForm())
+                    {
+                        @Html.Hidden("Type", "Picture")
+                        @Html.Hidden("Action", "unflag")
+                        @Html.Hidden("id", p.Id)
+                        <span class="glyphicon glyphicon-ok text-success"><input class="btn btn-success" type="submit" value="unflag" /></span>
+                    }
+                </th>
+                <th>
+                    @using (Html.BeginForm())
+                    {
+                        @Html.Hidden("Type", "Picture")
+                        @Html.Hidden("Action", "remove")
+                        @Html.Hidden("id", p.Id)
+                        <span class="glyphicon glyphicon-remove text-danger"><input class="btn btn-danger" type="submit" value="remove" /></span>
+                    }
+                </th>
+            </tr>
+        }
+
+    </table>
+
+}
+else
+{
+    <h4 class="text-success"> There are no flagged pictures. </h4>
+}
+
+
+<h3 style="font-family: 'Josefin Sans', sans-serif; font-weight: bold;">Flagged Comments</h3>
+<hr />
+@if (flaggedComments != null && flaggedComments.Count != 0)
+{
+    <table class="table table-bordered">
+        <tr>
+            <th>Message</th>
+            <th>Picture</th>
+            <th>Time</th>
+            <th>Go to Picture</th>
+            <th>UNFLAG</th>
+            <th>REMOVE</th>
+        </tr>
+    
+        @foreach (Comment c in flaggedComments)
+        {
+            <tr>
+                <th>@c.Message</th>
+                <th><img class="img-circle indexImg" src="~/Content/Images/@c.Picture.ImagePath" alt="Caption" height="225" width="225" /></th>
+                <th>@c.Time</th>
+                <th>@Html.ActionLink("go to picture", "PictureDetail", "Picture", routeValues: new { id = @c.PictureId }, htmlAttributes: null)</th>
+                <th>
+                    @using (Html.BeginForm())
+                    {
+                        @Html.Hidden("Type", "Comment")
+                        @Html.Hidden("Action", "unflag")
+                        @Html.Hidden("id", c.Id)
+                        <span class="glyphicon glyphicon-ok text-success"><input  class="btn btn-success" type="submit" value="unflag" /></span>
+                    }
+                </th>
+                <th>
+                    @using (Html.BeginForm())
+                    {
+                        @Html.Hidden("Type", "Comment")
+                        @Html.Hidden("Action", "remove")
+                        @Html.Hidden("id", c.Id)
+                        <span class="glyphicon glyphicon-remove text-danger"><input  class="btn btn-danger" type="submit" value="remove" /></span>
+                    }
+                </th>
+            </tr>
+        }
+
+    </table>
+}
+else
+{
+    <h4 class="text-success"> There are no flagged comments. </h4>
+}

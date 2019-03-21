@@ -1,0 +1,243 @@
+﻿@using RoastMeApplication.Models.Entities;
+@using RoastMeApplication.Models.DAL;
+@model Comment
+@{
+    ViewBag.Title = "Picture Detail";
+    Picture p = this.ViewBag.picture as Picture;
+    Participant CurrentParticipant = null;
+    if (Session["participantID"] != null) {
+        CurrentParticipant = ViewBag.Participant as Participant;
+    }
+}
+
+<div class="row">
+
+    <div class="picture_index" style="margin-top: 30px;">
+        <div id="userInfo">
+            <p class="index_username">@p.Participant.Username</p>
+            <p class="index_caption">@p.Caption</p>
+        </div>
+
+
+        <hr />
+            <img class="img-circle" src="~/Content/Images/@p.ImagePath" alt="Caption" height="450" width="450" />
+        @* put 
+      underneath image *@   
+        <hr />
+        @*SEPARATION OF PICTURE ^ AND COMMENTS v *@
+
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-4">
+                    <a href="?ListSort=Recent">
+                        <span class="glyphicon glyphicon-time" style="color: black; float: left; margin-right: 10px;"></span>
+                    </a>
+                    <a href="?ListSort=Popular">
+                        <span class="glyphicon glyphicon-heart-empty" style="color: black; float: left;"></span>
+                    </a>
+                </div>
+                <div class="col-md-8">
+                    <a>
+                        <span class="glyphicon glyphicon-flag flag-picture" style="color: black; float:right"></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <hr />
+
+        @{
+            List<Comment> comments = ViewBag.comments;
+        }
+        
+        @using (Html.BeginForm("SubmitComment", "Picture", FormMethod.Post))
+        {
+            @Html.HiddenFor(m => m.PictureId, new { Value = p.Id})
+            @Html.HiddenFor(m => m.ParticipantId, new { Value = CurrentParticipant.Id })
+            <input type="hidden" name="" />
+            <div>
+                @Html.TextBoxFor(m => m.Message, htmlAttributes: new { placeholder = "Enter your comment", id = "comment-input" })
+                <input type="submit" value="Roast"/>
+            </div>
+            <hr />
+        }
+    
+        
+
+    @if (comments != null && comments.Count != 0)
+            {
+                foreach (Comment c in comments)
+                {
+                    String background = "white";
+            <div id="comment-container" class="row">
+                    <div id="commentInfo">
+                        <p class="index_username">@c.Participant.Username</p>
+                        @if (c.Message != null)
+                        {
+                            <p class="index_caption">@c.Message</p>
+                        }
+
+                       
+                    </div>
+                    
+
+                    @if (c.Votes != null && c.Votes.Count != 0)
+                    {
+                        foreach (Vote v in c.Votes)
+                        {
+                            if (v.CommentId == c.Id)
+                            {
+                                if (v.IsLike == true)
+                                {
+                                    background = "rgb(136, 232, 136)"; //like
+                                }
+                                else if (v.IsLike == false)
+                                {
+                                    background = "rgb(255, 71, 71)";//dislike
+                                }
+                                else if (v.IsLike == null)
+                                {
+                                    background = "white";//null
+                                }
+                            }
+                        }
+                    }
+                    <div id="score" class="@c.Id">
+                        <p style="font-weight: bold; color: #E47E1C">@c.VoteScore</p>
+                        @if (background == "rgb(136, 232, 136)")//rgb(0, 128, 0) //new green rgb(136, 232, 136)
+                        {
+                            <button class="like" style="background-color:@background"><span class="glyphicon glyphicon-arrow-up"></span></button>
+                            <button class="dislike" style="background-color:white"><span class="glyphicon glyphicon-arrow-down"></span></button>
+                        }
+                        else if (background == "rgb(255, 71, 71)")//rgb(0, 0, 255)
+                        {
+                            <button class="like" style="background-color:white"><span class="glyphicon glyphicon-arrow-up"></span></button>
+                            <button class="dislike" style="background-color:@background"><span class="glyphicon glyphicon-arrow-down"></span></button>
+                        }
+                        else if (background == "white")//rgb(255, 255, 255)
+                        {
+                            <button class="like" style="background-color:@background"><span class="glyphicon glyphicon-arrow-up"></span></button>
+                            <button class="dislike" style="background-color:@background"><span class="glyphicon glyphicon-arrow-down"></span></button>
+                        }
+
+                        <button class="flag"><span class="glyphicon glyphicon-flag"></span></button>
+                    </div>
+                </div>
+                <hr />
+                }
+            }
+         </div>
+        </div>@*comment container end*@
+
+        </div>
+<script src="~/Scripts/jquery.unobtrusive-ajax.js"></script>
+<script>
+    $(document).ready(function () {
+        var participant_id = @CurrentParticipant.Id;
+
+        var JsonResult;
+        $('.like').click(function () {
+            var like = $(this);
+            
+            var comment_id = this.parentElement.className;
+            var dislike = $("."+comment_id+" .dislike");
+            var rgb = $(this).css("background-color");
+            if(rgb == 'rgb(255, 255, 255)'){
+                JsonResult = "{'isLike':1,'ParticipantId': " + participant_id + ",'CommentId':"+comment_id+"}";
+            }else if(rgb == 'rgb(136, 232, 136)'){
+                JsonResult = "{'isLike':-1,'ParticipantId': " + participant_id + ",'CommentId':" + comment_id + "}";
+            }
+            
+            $.ajax({
+                url: '@Url.Action("LikeVote", "Picture")',
+                type: 'GET',
+                dataType: 'json',
+                cache: false,
+                data: {JsonResult},
+                success: function (results) {
+                    $("."+comment_id+" p").html(results[0]);
+                    if(results[1] == "1"){
+                        like.css("background-color","rgb(136, 232, 136)");
+                        dislike.css("background-color","rgb(255, 255, 255)");
+                    }else if(results[1] == "-1"){
+                        like.css("background-color","rgb(255, 255, 255)");
+                        dislike.css("background-color","rgb(255, 255, 255)");
+                    }
+                },
+                error: function () {
+                    alert('Error occured');
+                }
+            });
+        });
+        $('.dislike').click(function () {
+            var dislike = $(this);
+            
+            var comment_id = this.parentElement.className;
+            var like = $("."+comment_id+" .like");
+            var rgb = $(this).css("background-color");
+            if(rgb == 'rgb(255, 255, 255)'){
+                JsonResult = "{'isLike':0,'ParticipantId': " + participant_id + ",'CommentId':" + comment_id + "}";
+            }else if(rgb == 'rgb(255, 71, 71)'){
+                JsonResult = "{'isLike':-1,'ParticipantId': " + participant_id + ",'CommentId':" + comment_id + "}";
+            }
+            $.ajax({
+                url: '@Url.Action("LikeVote", "Picture")',
+                type: 'GET',
+                dataType: 'json',
+                cache: false,
+                data: {JsonResult},
+                success: function (results) {
+                    $("."+comment_id+" p").html(results[0]);
+                    
+                    if(results[1] == "0"){
+                        dislike.css("background-color","rgb(255, 71, 71)");
+                        like.css("background-color","rgb(255, 255, 255)");
+                    }else if(results[1] == "-1"){
+                        dislike.css("background-color","rgb(255, 255, 255)");
+                        like.css("background-color","rgb(255, 255, 255)");
+                    }
+                },
+                error: function () {
+                    alert('Error occured');
+                }
+            });
+        });
+        $('.flag').click(function () {
+            var comment_id = this.parentElement.className;
+            JsonFlag = "{'isFlagged':1,'CommentId':" + comment_id + "}";
+            $.ajax({
+                url: '@Url.Action("GiveFlagged", "Picture")',
+                type: 'GET',
+                dataType: 'json',
+                cache: false,
+                data: {JsonFlag},
+                success: function (results) {
+                },
+                error: function () {
+                    alert('Error occured');
+                }
+            });
+        });
+
+        $('.flag-picture').click(function(){
+            var picture_id = @p.Id;
+            
+            JsonFlag = "{'isFlagged':1,'id':" + picture_id + "}";
+            $.ajax({
+                url: '@Url.Action("GivePictureFlagged", "Picture")',
+                type: 'GET',
+                dataType: 'json',
+                cache: false,
+                data: {JsonFlag},
+                success: function (results) {
+                },
+                error: function () {
+                    alert('Error occured');
+                }
+            });
+        
+        });
+
+     });
+
+</script>

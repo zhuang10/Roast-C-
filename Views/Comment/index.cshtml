@@ -1,0 +1,234 @@
+﻿@using RoastMeApplication.Models.Entities;
+@using RoastMeApplication.Models.DAL;
+@{
+    ViewBag.Title = "Comment";
+    List<Picture> p = PictureManager.GetAll();
+    Picture pic = p[0];
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Experimentation Composition</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Chen Zhuang" />
+    <style>
+        body {
+            text-align: center;
+        }
+
+        #main {
+            width: 800px;
+            height: 400px;
+            background: red;
+        }
+
+        #picture {
+            align: center;
+            width: 70%;
+            height: 100%;
+            display: inline-block;
+            background: black;
+        }
+
+            #picture img {
+                width: 50%;
+            }
+
+        #comment {
+            display: inline-block;
+        }
+
+        #div0 {
+            width: 30%;
+            position: relative;
+            background: rgba(5, 105, 245, 0.11);
+            border-radius: 2px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #div1 {
+            width: 100%;
+            height: 100px;
+            overflow: hidden;
+        }
+
+        #div2 {
+            width: 100%;
+            height: 100px;
+            padding-right: 60px;
+            overflow-y: scroll;
+        }
+
+        #div3 {
+            width: 100%;
+            padding: 5px;
+            overflow-wrap: break-word;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="main">
+        <div id="picture">
+            <img src="~/Content/Images/@pic.ImagePath" />
+        </div>s
+        <div id="comment">
+            <div id="div0">
+                <div id="div1">
+                    <div id="div2">
+                        <div id="div3">
+                            @{ 
+                                List<Comment> comments = new List<Comment>();
+                                comments = CommentsManage.GetCommentByPictureId(pic.Id);
+                            }
+                            @{
+                                if (comments != null && comments.Count != 0)
+                                {
+                                    foreach (Comment c in comments)
+                                    {
+                                        Participant ppl = ParticipantManager.GetById(c.ParticipantId);
+                                        <p>@ppl.Username : @c.Message</p>
+                                     }
+                                }
+                              }
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+                
+
+            <div>
+                @using (Html.BeginForm("SubmitComment", "Comment", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    <input type="hidden" name="pic_id" id="message" value="@pic.Id"/>
+                    <input type="text" name="message" id="message"/>
+                    <input type="submit" />
+                }
+            </div>
+        </div>
+    </div>
+    <script>
+        function Scroll(panelId, scrollBarId, scrollBtnId, step){
+            var panel = document.getElementById(panelId);
+            var scrollBar = document.getElementById(scrollBarId);
+            var scrollBtn = document.getElementById(scrollBtnId);
+            var scrollBarDownY = 0, scrollTop = 0.0, lastScrollTop = 0, isSlither = false, distance = 0, a = 0.0;
+            var val1 = null;
+            var wnd = window, doc = document;
+
+   
+            scrollBar.style.height = panel.offsetHeight+"px";
+
+            function slither()
+            {
+                if(val1 == null){
+                    val1 = setInterval(function(){
+                        if(isSlither) {
+                            isSlither = false;
+                            distance = scrollTop - lastScrollTop;
+                            a =  distance / 30;
+                            lastScrollTop = scrollTop;
+                        }
+
+                        if(distance != 0)
+                        {
+                            scrollTop += distance / 3.0;
+                            panel.scrollTop = scrollTop;
+                            if(Math.abs(panel.scrollTop - scrollTop) > 0)
+                                lastScrollTop = scrollTop = panel.scrollTop;
+                            distance -= a;
+                            if(Math.abs(distance) < Math.abs(a))
+                                distance = a = 0;
+                        }
+                        else
+                        {
+                            clearInterval(val1);
+                            val1 = null;
+                        }
+                    }, 30);
+                }
+            }
+
+
+            var setBar = function(){
+                var scan = panel.getBoundingClientRect().height / panel.scrollHeight;
+                if(scan >= 1) {
+                    scrollBtn.style.display = "none"
+                }
+                else{
+                    scrollBtn.style.display = "block"
+                    scrollBtn.style.height = (scan * 100)+"%";
+                    scrollBtn.style.top = (panel.scrollTop / panel.scrollHeight * 100)+"%";
+                }
+            }
+            setTimeout(function(){setBar();}, 1000);
+
+            panel.onscroll = function(){
+                setBar();
+            }
+
+            var mouseMove = function(e)
+            {
+                isSlither = true;
+                if(scrollBarDownY > 0)
+                    lastScrollTop = scrollTop = panel.scrollTop = (e.pageY-scrollBar.getBoundingClientRect().top - scrollBarDownY) / panel.getBoundingClientRect().height * panel.scrollHeight;
+                wnd.getSelection ? wnd.getSelection().removeAllRanges() : doc.selection.empty(); 
+            }
+
+            doc.onmouseup = function(){
+                scrollBarDownY = 0;
+                doc.onmousemove = null;
+            }
+
+            scrollBtn.onmousedown = function(e) {
+                scrollBarDownY = e.pageY - scrollBtn.getBoundingClientRect().top;
+                doc.onmousemove = mouseMove;
+                distance = 0;
+            }
+
+            scrollBar.onmousedown = function(e)
+            {
+                if(e.pageY < scrollBtn.getBoundingClientRect().top || e.pageY > scrollBtn.getBoundingClientRect().bottom) {
+                    scrollBarDownY = 1;
+                    distance = 0;
+                    lastScrollTop = scrollTop = panel.scrollTop = (e.pageY - scrollBar.getBoundingClientRect().top) / panel.getBoundingClientRect().height * panel.scrollHeight;
+                }
+            }
+
+            scrollBar.onmousewheel = panel.onmousewheel = function(e){
+                if (e.wheelDelta) {  
+                    isSlither = true;
+                    slither();
+                    if (e.wheelDelta > 0) { 
+                        panel.scrollTop -= step;
+                        scrollTop -= step;
+                    }
+                    if (e.wheelDelta < 0) { 
+                        panel.scrollTop += step;
+                        scrollTop += step;
+                    }
+                } else if (e.detail) {  
+                    isSlither = true;
+                    slither();
+                    if (e.detail> 0) { 
+                        panel.scrollTop  -= step;
+                        scrollTop -= step;
+                    }
+                    if (e.detail< 0) { 
+                        panel.scrollTop  += step;
+                        scrollTop += step;
+                    }
+                }
+            }
+        }
+        Scroll("div2", "scroll-bar", "scroll-btn", 5);
+    </script>
+</body>
+</html>
+

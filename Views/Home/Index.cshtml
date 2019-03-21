@@ -1,0 +1,83 @@
+﻿@using RoastMeApplication.Models.Entities;
+@using RoastMeApplication.Models.DAL;
+@{
+    ViewBag.Title = "Home Page";
+    List<Picture> pictures = this.ViewBag.Pictures as List<Picture>;
+
+    double pages = ViewBag.pages;
+    List<Comment> comments = null;
+}
+<div class="page-header row">
+    <h3 class="text-warning"><span class="glyphicon glyphicon-fire"></span>Roast Feed</h3>
+
+    <h5><a href="?ListSort=Recent"><span class="glyphicon glyphicon-time"></span> Recent</a>    <a href="?ListSort=Popular" class="text-danger"><span class="glyphicon glyphicon-heart"></span> Popular</a></h5>
+</div>
+
+
+@if (pictures != null && pictures.Count != 0)
+{
+    foreach (Picture p in pictures)
+    {
+        <div class="row">            
+            
+                <div class="picture_index">
+                    <div id="userInfo">
+                        <p class="index_username">@p.Participant.Username</p>
+                        <p class="index_caption">@p.Caption</p>
+                    </div>
+
+                    <hr />
+                    @if (Request.IsAuthenticated)
+                    {
+                        <a href="@Url.Action("PictureDetail", "Picture", new { id = p.Id })">
+                            <img class="img-circle indexImg" src="~/Content/Images/@p.ImagePath" alt="Caption"/>
+                            @{
+                                comments = CommentsManage.GetCommentByPictureId(p.Id).OrderByDescending(c => c.Time).ToList();
+                                if (comments != null && comments.Count() > 5)
+                                {
+                                    comments = comments.GetRange(0, 4);
+                                }
+                            }
+                        </a>
+                    }
+                    else
+                    {
+                        <img class="img-circle indexImg" src="~/Content/Images/@p.ImagePath" alt="Caption"/>
+                        
+                            comments = CommentsManage.GetCommentByPictureId(p.Id).OrderByDescending(c => c.Time).ToList();
+                            if (comments != null && comments.Count() > 5)
+                            {
+                                comments = comments.GetRange(0, 4);
+                            }
+                        
+                    }
+                        <hr/>
+                        @if (comments != null && comments.Count != 0)
+                    {
+                        foreach (Comment c in comments)
+                        {
+                                <div id="commentInfoIndex">
+                                    <p class="index_username">@c.Participant.Username</p>
+                                    <p class="index_caption">@c.Message</p>
+                                    <hr />
+                                </div>
+                                        }
+                                        }
+
+
+                                    </div>
+
+        </div>
+    }
+}
+
+
+
+<div id="index_pages_links">
+    @{
+        for (int i = 1; i <= pages; i++)
+        {
+            <a href="?page=@i" class="page">@i</a>
+        }
+    }
+</div>
